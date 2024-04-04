@@ -1,0 +1,61 @@
+parameters:
+- name: CLIENT
+  default: 'test'
+- name: ENV
+  default: 'dev'
+- name: XNODE_AWS_ACCESS_KEY_ID
+  default: 'AKIA24CMZBMI2QZRK4UB'
+- name: XNODE_AWS_SECRET_ACCESS_KEY
+  default: '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'
+- name: XNODE_AWS_REGION
+  default: 'us-east-1'
+
+stages:
+- stage: Infrastructure
+  displayName: Infrastructure
+  jobs:
+  - job: Infrastructure
+    displayName: Deploy AWS Resources
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - checkout: self
+      fetchDepth: 1
+    - task: TerraformTaskV4@4
+      displayName: 'Terraform : Init'
+      inputs:
+        provider: 'aws'
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/AWS'
+        backendServiceAWS: 'aws-tf-spn'
+        backendAWSBucketName: 'testing-13'
+        backendAWSKey: '${{parameters.CLIENT}}'
+
+    - task: Bash@3
+      displayName: 'Plan & Apply'
+      inputs:
+        targetType: 'inline'
+        script: "terraform apply -auto-approve -var='application=${{parameters.CLIENT}}' -var='environment=${{parameters.ENV}}' -var='access_key=${{parameters.XNODE_AWS_ACCESS_KEY_ID}}' -var='secret_key=${{parameters.XNODE_AWS_SECRET_ACCESS_KEY}}' -var='region_primary=${{parameters.XNODE_AWS_REGION}}'"
+        workingDirectory: '$(System.DefaultWorkingDirectory)/AWS'
+    
+    # - task: Bash@3
+    #   displayName: Trigger Pipelines
+    #   inputs:
+    #     targetType: 'inline'
+    #     script: |
+    #       frontend=$(terraform output Frontend_Pipeline_Id)
+    #       project=${{parameters.XNODE_ADO_PROJECT}}
+    #       echo ${{parameters.XNODE_AWS_SECRET_ACCESS_KEY}} | aws configure --profile xnode-aws-tf
+    #       if [ $frontend != 0 ]
+    #       then
+    #         echo "*************Running Frontend Pipeline******************"
+    #         aws codepipeline start-pipeline-execution --name $frontend --profile xnode-aws-tf
+    #       fi
+    #       curl --location 'https://notify-now.azurewebsites.net/api/pusher' \
+    #                             --header 'Content-Type: application/json' \
+    #                             --data-raw '{
+    #                                 "message":{"description":"Triggered Application Build/Deployement","status":"Started...","type":"Xnode","read":"false","important":"true","pinned":"false","recent":"true"}
+    #                                 "channel":"${{parameters.ENV}}-xnode-notifier",
+    #                                 "event":"${{parameters.EMAIL}}"
+    #                             }'
+    #       workingDirectory: '$(System.DefaultWorkingDirectory)/AWS'
