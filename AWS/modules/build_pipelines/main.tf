@@ -5,6 +5,14 @@ data "azuredevops_git_repository" "repo" {
   project_id = data.azuredevops_project.project.id
   name       = var.name
 }
+resource "azuredevops_serviceendpoint_aws" "aws_service_connection" {
+  project_id = data.azuredevops_project.project.id  # Corrected reference
+  service_endpoint_name = "aws_spn"
+  description           = "AWS service connection managed by Terraform"
+  access_key_id         = var.aws_access_key_id
+  secret_access_key     = var.aws_secret_access_key
+}
+
 resource "azuredevops_build_definition" "pipeline" {
   project_id = data.azuredevops_project.project.id
   name       = var.name
@@ -13,7 +21,7 @@ resource "azuredevops_build_definition" "pipeline" {
     repo_type = "TfsGit"
     repo_id     = data.azuredevops_git_repository.repo.id
     branch_name = var.branch
-    yml_path    = "./frontend/azure-pipeline.yml"
+    yml_path    = "./frontend/aws-pipeline.yml"
   }
   ci_trigger {
     override {
