@@ -1,5 +1,1 @@
-region_primary = "us-east-1"
-access_key     = "AKIA24CMZBMI2QZRK4UB"
-secret_key     = "WIXXPFUWsMWB0HFEwbfGnYA95KcYD3A7lB4TlE5P"
-application    = "xnode-sample-product"
-environment    = "dev"
+
